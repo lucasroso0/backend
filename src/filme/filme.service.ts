@@ -1,21 +1,33 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateFilmeDto } from './dto/create-filme.dto';
 import { UpdateFilmeDto } from './dto/update-filme.dto';
-//import { Filme } from '@prisma/client'; // Importando o tipo Filme do Prisma
 
 @Injectable()
 export class FilmeService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(createFilmeDto: CreateFilmeDto) {
+    // 2. VERIFICA SE O FILME JÁ EXISTE
+    // Corrigido: Use 'findFirst' para buscar por campos que não são únicos, como 'titulo'
+    const filmeExiste = await this.prisma.filme.findFirst({
+      where: { titulo: createFilmeDto.titulo },
+    });
+
+    // 3. SE EXISTIR, LANÇA UM ERRO
+    if (filmeExiste) {
+      throw new ConflictException(
+        `Já existe um filme cadastrado com o título "${createFilmeDto.titulo}"`,
+      );
+    }
+
+    // 4. SE NÃO EXISTIR, CRIA O NOVO FILME
     return this.prisma.filme.create({
-      data: {
-        titulo: createFilmeDto.titulo,
-        duracao: createFilmeDto.duracao,
-        ano: createFilmeDto.ano,
-        diretor: createFilmeDto.diretor,
-      },
+      data: createFilmeDto,
     });
   }
 
@@ -24,6 +36,7 @@ export class FilmeService {
   }
 
   async findOne(id: number) {
+    // 'findUnique' está correto aqui, pois busca pelo ID que é um campo único.
     const filme = await this.prisma.filme.findUnique({ where: { id } });
     if (!filme)
       throw new NotFoundException(`Filme com ID ${id} não encontrado`);
