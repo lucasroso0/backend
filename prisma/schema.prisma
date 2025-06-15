@@ -1,0 +1,66 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  name      String?
+  password  String   // Adicione este campo se for lidar com senhas
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users") // Mapeia para a tabela "users" no banco de dados
+}
+
+model Filme {
+  id        Int       @id @default(autoincrement())
+  titulo    String
+  duracao   Int
+  ano       Int
+  diretor   String
+  sessoes   Sessao[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Sala {
+  id        Int       @id @default(autoincrement())
+  nome      String
+  capacidade Int
+  sessoes   Sessao[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Sessao {
+  id        Int       @id @default(autoincrement())
+  horario   DateTime
+  filme     Filme     @relation(fields: [filmeId], references: [id])
+  filmeId   Int
+  sala      Sala      @relation(fields: [salaId], references: [id])
+  salaId    Int
+  ingressos Ingresso[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Ingresso {
+  id           Int      @id @default(autoincrement())
+  sessao       Sessao   @relation(fields: [sessaoId], references: [id])
+  sessaoId     Int
+  nomeCliente  String
+  assento      String
+  createdAt    DateTime @default(now())
+}
